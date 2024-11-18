@@ -10,7 +10,8 @@ interface UserDocument extends Document {
 	firstname: string;
 	lastname: string;
 	googleId?: string; // To store Google-specific ID
-	authProvider?: "google" | "local"; // To differentiate between social and traditional login
+	facebookId: string;
+	authProvider?: "google" | "local" | "facebook"; // To differentiate between social and traditional login
 }
 
 const UserSchema: Schema<UserDocument> =
@@ -29,10 +30,11 @@ const UserSchema: Schema<UserDocument> =
 			unique: true,
 		},
 		password: { type: String },
-		googleId: { type: String, unique: true },
+		googleId: { type: String},
+		facebookId: { type: String},
 		authProvider: {
 			type: String,
-			enum: ["google", "local"],
+			enum: ["google", "local", "facebook"],
 			required: true,
 		},
 	});
