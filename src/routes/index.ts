@@ -2,21 +2,25 @@ import { Router } from "express";
 import {
 	register,
 	login,
+	resetPasswordRequest,
+	verifyOTP,
+	resetPassword,
+	verifyEmail
 } from "../controllers/user.controller";
 import passport from "../passport";
 const asyncHandler = require("express-async-handler");
-// import User from "../models/user.model";
 
 const router = Router();
 
 router.post("/signup", register);
 
+router.post("/verify-email", verifyEmail)
+
 router.post("/login", login);
 
-router.get("/err", (req,res,err)=>{
-  console.log(err)
-  res.send("Login Error")
-})
+// router.get("/err", (req,res,err)=>{
+//   res.send("Login Error")
+// })
 
 // Initiates Google login
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
@@ -105,4 +109,21 @@ router.get(
 	})
 );
 
+// 1. Request Password Reset
+router.post(
+	"/reset-password/request",
+	resetPasswordRequest
+);
+
+// 2. Verify OTP
+router.post(
+	"/reset-password/verify",
+	verifyOTP
+);
+
+// 3. Reset Password
+router.post(
+	"/reset-password",
+	resetPassword
+);
 export default router;

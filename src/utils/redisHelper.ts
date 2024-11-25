@@ -3,7 +3,11 @@ import express from "express";
 import Redis from "ioredis";
 
 const router = express.Router();
-const redis = new Redis(); // Connect to your Redis instance
+const redis = new Redis()
+//  new Redis({
+//   host: 'redis', // Service name in docker-compose
+//   port: 6379
+// }); // Connect to your Redis instance
 
 
 // Helper to store OTP in Redis
