@@ -1,0 +1,31 @@
+version: "3.8"
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000" # Expose the app on port 3000
+    env_file:
+      - .env
+    depends_on:
+      - mongo
+      - redis
+
+  mongo:
+    image: mongo:6
+    container_name: mongodb
+    ports:
+      - "27017:27017" # Expose MongoDB on port 27017
+    volumes:
+      - mongo-data:/data/db
+
+  redis:
+    image: redis:7-alpine
+    container_name: redisdb
+    ports:
+      - "6379:6379" # Expose Redis on port 6379
+    volumes:
+      - redis-data:/data
+
+volumes:
+  mongo-data: # Persistent storage for MongoDB
+  redis-data: # Persistent storage for Redis
