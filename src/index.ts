@@ -4,7 +4,9 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import session from "express-session";
 import passport from "./passport";
+import { errorHandler } from "./errorHandler";
 dotenv.config();
+
 const app = express();
 const PORT = 3000
 
@@ -25,6 +27,7 @@ app.get("/", (req,res)=>{
 })
 
 app.use("/auth", routes)
+app.use(errorHandler)
 mongoose
 	.connect(process.env.MONGO_URI as string)
 	.then(() => {
