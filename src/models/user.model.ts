@@ -12,6 +12,7 @@ interface UserDocument extends Document {
 	googleId?: string; // To store Google-specific ID
 	facebookId: string;
 	authProvider?: "google" | "local" | "facebook"; // To differentiate between social and traditional login
+	isVerified: Boolean;
 }
 
 const UserSchema: Schema<UserDocument> =
@@ -30,13 +31,27 @@ const UserSchema: Schema<UserDocument> =
 			unique: true,
 		},
 		password: { type: String },
-		googleId: { type: String},
-		facebookId: { type: String},
+		googleId: {
+			type: String,
+			unique: true, // Unique constraint
+			sparse: true, // Allows multiple `null` values
+		},
+		facebookId: {
+			type: String,
+			unique: true, // Unique constraint
+			sparse: true, // Allows multiple `null` values
+		},
 		authProvider: {
 			type: String,
 			enum: ["google", "local", "facebook"],
 			required: true,
+			default: "local",
 		},
+
+		isVerified: {
+			type: Boolean,
+			default: false,
+		}
 	});
 
 export default mongoose.model<UserDocument>(

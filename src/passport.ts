@@ -36,6 +36,7 @@ passport.use(
 				firstname: profile.name?.givenName,
 				lastname: profile.name?.familyName,
 				authProvider: "google",
+				isVerified: true
 			});
 		}
 
@@ -87,7 +88,8 @@ passport.use(
 						email: profile.emails?.[0]?.value,
 						// profilePicture:
 						// 	profile.photos?.[0]?.value,
-						authProvider: profile.provider
+						authProvider: profile.provider,
+						isVerified: true
 					});
 				}
 
