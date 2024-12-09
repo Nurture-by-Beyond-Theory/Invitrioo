@@ -23,7 +23,7 @@ function errorHandler(
 			err.message ||
 			"Something went wrong",
 		statusCode: err.statusCode || 500,
-		error: err.error || "Something went wrong!",
+		error: err || "Something went wrong!",
 	};
 
 	// Handle CastError

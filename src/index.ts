@@ -1,5 +1,6 @@
 import express from "express"
-import routes from "./routes";
+import user from "./routes/user.routes";
+import event from "./routes/event.routes"
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import session from "express-session";
@@ -26,7 +27,8 @@ app.get("/", (req,res)=>{
   res.send("Welcome")
 })
 
-app.use("/auth", routes)
+app.use("/auth", user)
+app.use('/api', event)
 app.use(errorHandler)
 mongoose
 	.connect(process.env.MONGO_URI as string)

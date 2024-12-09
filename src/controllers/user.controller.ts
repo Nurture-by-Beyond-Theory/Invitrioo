@@ -33,7 +33,12 @@ export const register = asyncHandler(
 			email,
 			password: hashedPassword,
 		});
-		res.status(201).json({ user });
+		const token = jwt.sign(
+			{ email },
+			process.env.JWT_SECRET as string,
+			{ expiresIn: "1h" }
+		);
+		res.status(201).json({ user, token });
 	}
 );
 export const verifyEmail = asyncHandler(
@@ -44,25 +49,36 @@ export const login = asyncHandler( async (
 	req: Request,
 	res: Response,
 ): Promise<any> => {
-		const { email, password } = req.body;
-		const user = await User.findOne({ email });
-		if (
-			!user ||
-			!(await bcrypt.compare(
-				password,
-				user.password
-			))
-		) {
-			return res
-				.status(401)
-				.json({ error: "Invalid credentials" });
-		}
-		const token = jwt.sign(
-			{ id: user._id },
-			process.env.JWT_SECRET as string,
-			{ expiresIn: "1h" }
-		);
-		res.json({ token });
+	const { email, password } = req.body;
+	const user = await User.findOne({ email });
+	// Step 2: Check if the user is using social auth
+	if (
+		!user.password &&
+		user.authProvider !== "local"
+	) {
+		return res
+			.status(400)
+			.json({message: `Your account is linked to ${user.authProvider}. Please use that provider to log in or reset your password.`})
+		};
+	if (
+		!user ||
+		!(await bcrypt.compare(
+			password,
+			user.password
+		))
+	) {
+		return res
+			.status(401)
+			.json({ error: "Invalid credentials" });
+	}
+	const token = jwt.sign(
+		{ email },
+		process.env.JWT_SECRET as string,
+		{ expiresIn: "1h" }
+	);
+	return res
+	.status(200)
+	.json({message:"Login Successful", token });
 });
 
 export const resetPasswordRequest = asyncHandler(
@@ -74,7 +90,17 @@ export const resetPasswordRequest = asyncHandler(
 				.status(404)
 				.json({ message: "User not found" });
 		}
-
+		// Step 2: Check if the user is using social auth
+		if (
+			!user.password &&
+			user.authProvider !== "local"
+		) {
+			return res
+				.status(400)
+				.json({
+					message: `Your account is linked to ${user.authProvider}. Please use that provider to log in or reset your password.`,
+				});
+		}
 		// Generate OTP and store it in Redis with 10-minute expiration
 		const otp = crypto
 			.randomInt(10000, 99999)
@@ -101,10 +127,12 @@ export const resetPasswordRequest = asyncHandler(
         </div>
     `,
 		});
-
-		res.json({
-			message: "OTP sent to your email",
-		});
+		
+		return res
+			.status(200)
+			.json({
+				message: "OTP sent to your email",
+			});
 	}
 );
 
@@ -128,7 +156,9 @@ export const verifyOTP = asyncHandler(
 				.json({ message: "Invalid OTP" });
 		}
 
-		res.json({
+		return res
+		.status(200)
+		.json({
 			message:
 				"OTP verified, you can now reset your password",
 		});
@@ -156,7 +186,9 @@ export const resetPassword = asyncHandler(
 		// Delete OTP from Redis
 		await deleteOtpFromRedis(email);
 
-		res.json({
+		return res
+		.status(200)
+		.json({
 			message: "Password reset successful",
 		});
 	}
