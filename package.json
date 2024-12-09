@@ -6,25 +6,28 @@
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"build": "tsc",
 		"start": "node dist/index.js",
-		"dev" : "nodemon dist/index.js",
+		"dev": "nodemon dist/index.js",
 		"pm2": "pm2 start ecosystem.config.js --no-daemon"
+	},
+	"engines": {
+		"node": ">=16.14.0"
 	},
 	"keywords": [],
 	"author": "",
 	"license": "ISC",
 	"description": "",
 	"dependencies": {
-		"@types/nodemailer": "^6.4.16",
+		"@types/nodemailer": "^6.4.17",
 		"@types/passport-facebook": "^3.0.3",
 		"bcryptjs": "^2.4.3",
 		"cloudinary": "^2.5.1",
-		"dotenv": "^16.4.5",
-		"express": "^4.21.1",
+		"dotenv": "^16.4.7",
+		"express": "^4.21.2",
 		"express-async-handler": "^1.2.0",
 		"express-session": "^1.18.1",
 		"ioredis": "^5.4.1",
 		"jsonwebtoken": "^9.0.2",
-		"mongoose": "^8.8.1",
+		"mongoose": "^8.8.4",
 		"multer": "^1.4.5-lts.1",
 		"nodemailer": "^6.9.16",
 		"passport": "^0.7.0",
@@ -43,6 +46,6 @@
 		"@types/passport-google-oauth20": "^2.0.16",
 		"nodemon": "^3.1.7",
 		"ts-node": "^10.9.2",
-		"typescript": "^5.6.3"
+		"typescript": "^5.7.2"
 	}
 }
