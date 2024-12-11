@@ -6,10 +6,10 @@ import jwt from "jsonwebtoken";
 const asyncHandler = require("express-async-handler");
 import crypto from "crypto";
 const {
-	storeOtpInRedis,
-	getOtpFromRedis,
-	deleteOtpFromRedis,
-} = require("../utils/redisHelper");
+	storeOtp,
+	verifyOtp
+
+} = require("../utils/otp");
 import transporter from "../utils/nodemailer";
 
 export const register = asyncHandler(
@@ -105,7 +105,7 @@ export const resetPasswordRequest = asyncHandler(
 		const otp = crypto
 			.randomInt(10000, 99999)
 			.toString();
-		await storeOtpInRedis(email, otp, 600); // 600 seconds = 10 minutes
+		await storeOtp(email, otp); // 600 seconds = 10 minutes
 
 		// Send OTP via email
 		await transporter.sendMail({
@@ -140,8 +140,9 @@ export const verifyOTP = asyncHandler(
 	async (req: Request, res: Response) => {
 		const { email, otp } = req.body;
 		// Get OTP from Redis
-		const storedOtp = await getOtpFromRedis(
-			email
+		const storedOtp = await verifyOtp(
+			email,
+			otp
 		);
 		if (!storedOtp) {
 			return res.status(400).json({
@@ -149,13 +150,6 @@ export const verifyOTP = asyncHandler(
 					"No OTP request found or OTP expired",
 			});
 		}
-
-		if (storedOtp !== otp) {
-			return res
-				.status(400)
-				.json({ message: "Invalid OTP" });
-		}
-
 		return res
 		.status(200)
 		.json({
@@ -184,7 +178,7 @@ export const resetPassword = asyncHandler(
 		await user.save();
 
 		// Delete OTP from Redis
-		await deleteOtpFromRedis(email);
+		// await deleteOtpFromRedis(email);
 
 		return res
 		.status(200)
