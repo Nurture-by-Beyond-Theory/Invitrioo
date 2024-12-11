@@ -1,37 +1,29 @@
-// const cloudinary = require("cloudinary").v2;
-// const streamifier = require("streamifier");
+const cloudinary = require("cloudinary").v2;
+const streamifier = require("streamifier");
+const dotenv = require("dotenv");
+dotenv.config();
 
-// const uploadDoc = async (file) => {
-// 	// Cloudinary configuration
-// 	cloudinary.config({
-// 		cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-// 		api_key: process.env.CLOUDINARY_API_KEY,
-// 		api_secret: process.env.CLOUDINARY_API_SECRET,
-// 	});
+cloudinary.config({
+	cloud_name: process.env.CLOUDINARY_NAME,
+	api_key: process.env.CLOUDINARY_API_KEY,
+	api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+ const uploadToCloudinary = (
+	fileBuffer: Buffer
+) => {
+	return new Promise((resolve, reject) => {
+		const uploadStream =
+			cloudinary.uploader.upload_stream(
+				{ folder: "uploads" },
+				(error, result) => {
+					if (error) return reject(error);
+					resolve(result.secure_url);
+				}
+			);
+		streamifier
+			.createReadStream(fileBuffer)
+			.pipe(uploadStream);
+	});
+};
 
-// 	  const stream =
-// 			cloudinary.uploader.upload_stream(
-// 				{ folder: "uploads" },
-// 				(error, result) => {
-// 					if (error)
-// 					throw new Error({error:error.message})
-
-// 					return({
-// message:
-// 							"File uploaded successfully!",
-// 						file: {
-// 							url: result.secure_url,
-// 							public_id: result.public_id,
-// 						},
-// 					})
-						
-// 					});
-// 				}
-// 			);
-
-// 		streamifier
-// 			.createReadStream(req.file.buffer)
-// 			.pipe(stream);
-// 	return cloudinaryUpload.secure_url;
-// };
-// export default uploadDoc
+export default uploadToCloudinary;

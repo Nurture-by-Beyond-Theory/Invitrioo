@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createEvent } from "../controllers/event.controller";
+import { createEvent, getEvents } from "../controllers/event.controller";
 // import {upload} from "../utils/multer";
 // const cloudinary = require("cloudinary").v2;
 // const {
@@ -24,6 +24,12 @@ router.post(
   authMiddleware,
 	upload.single("file"),
 	createEvent
+);
+
+router.get(
+	"/get-events",
+	authMiddleware,
+	getEvents
 );
 
 export default router;

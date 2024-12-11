@@ -13,6 +13,7 @@ export interface IEvent extends Document {
 	};
 	date: Date;
 	time: string;
+	duration: string;
 	location: string;
 	capacity: number;
 	isVirtual: boolean;
@@ -57,6 +58,10 @@ const EventSchema: Schema = new Schema<IEvent>({
 	},
 	time: {
 		type: String, // E.g., 'HH:mm'
+		required: true,
+	},
+	duration: {
+		type: String, // E.
 		required: true,
 	},
 	location: {

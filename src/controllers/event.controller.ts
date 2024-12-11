@@ -5,45 +5,20 @@ import {
 } from "express";
 import Event from "../models/event.model";
 const asyncHandler = require("express-async-handler");
-// import uploadDoc from "../utils/upload";
+import uploadToCloudinary from "../utils/upload";
 import { AuthRequest } from "../utils/authMiddleware";
-const cloudinary = require("cloudinary").v2;
-const streamifier = require("streamifier");
 const dotenv = require("dotenv");
 dotenv.config();
 
-cloudinary.config({
-	cloud_name: process.env.CLOUDINARY_NAME,
-	api_key: process.env.CLOUDINARY_API_KEY,
-	api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+
 export const createEvent = asyncHandler(
   async(req: AuthRequest, res : Response)=>{
 		// Helper function to handle Cloudinary upload
-		const uploadToCloudinary = (
-			fileBuffer: Buffer
-		) => {
-			return new Promise((resolve, reject) => {
-				const uploadStream =
-					cloudinary.uploader.upload_stream(
-						{ folder: "uploads" },
-						(error, result) => {
-							if (error) return reject(error);
-							resolve(result.secure_url);
-						}
-					);
-				streamifier
-					.createReadStream(fileBuffer)
-					.pipe(uploadStream);
-			});
-		};
-
+		
 		const imageUrl = await uploadToCloudinary(
 			req.file.buffer
 		);
-	
 
-		// 
 				const {
 					title,
 					description,
@@ -55,8 +30,8 @@ export const createEvent = asyncHandler(
 					isVirtual,
 					// image,
 					attendees,
-				} = req.body;
-		// console.log(req.user)
+				} = req.body.data;
+		console.log(req.body.data)
 				if (!req.user?.email) {
 					res.status(401).json({
 						message:
@@ -93,3 +68,19 @@ export const createEvent = asyncHandler(
 					});
 	}
 )
+
+export const getEvents = asyncHandler(
+	async (req: AuthRequest, res: Response) => {
+		const email= req.user?.email
+		const events = await Event.find({
+			"organizer.email": email,
+		});
+ if (events.length === 0) {
+		throw new Error("No events created")
+ } 
+		res.status(200).json({
+			message: "success",
+			event: events,
+		});
+	}
+);
