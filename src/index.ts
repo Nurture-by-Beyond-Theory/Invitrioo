@@ -6,11 +6,22 @@ import dotenv from "dotenv";
 import session from "express-session";
 import passport from "./passport";
 import { errorHandler } from "./errorHandler";
+import cors from "cors"
+
 dotenv.config();
 
 const app = express();
 const PORT = 3000
 
+// Configure CORS options
+const corsOptions = {
+  origin: 'http://localhost:5173', // Allow React-Vite app
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Add methods as needed
+  credentials: true, // Allow cookies or authorization headers
+};
+
+// Apply CORS middleware
+app.use(cors(corsOptions));
 app.use(express.json())
 // Session middleware configuration
 app.use(
