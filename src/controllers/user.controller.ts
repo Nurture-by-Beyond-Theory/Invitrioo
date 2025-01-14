@@ -1,9 +1,12 @@
 // src/controllers/userController.ts
 import { Request, Response, NextFunction } from "express";
 import User from "../models/user.model";
+import Feedback from "../models/feedback.model";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 const asyncHandler = require("express-async-handler");
+import { AuthRequest } from "../utils/authMiddleware";
+
 import crypto from "crypto";
 const {
 	storeOtp,
@@ -45,6 +48,48 @@ export const verifyEmail = asyncHandler(
 	async (req: Request, res: Response) => {}
 );
 
+export const sendFeedback = asyncHandler(
+	async (req: Request, res: Response) => {
+		const { email } = req.body;
+
+		if (!email) {
+			return res
+				.status(400)
+				.json({ message: "Email is required" });
+		}
+
+		// try {
+			// Create and save the feedback email
+			const feedback = new Feedback({ email });
+			await feedback.save();
+
+			res.status(201).json({
+				message:
+					"Feedback email saved successfully",
+				feedback: {
+					email: feedback.email,
+					createdAt: feedback.createdAt,
+				},
+			});
+		// } catch (error: any) {
+		// 	if (error.code === 11000) {
+		// 		// Duplicate email error
+		// 		return res
+		// 			.status(400)
+		// 			.json({
+		// 				message: "Email already exists",
+		// 			});
+		// 	}
+		// 	res
+		// 		.status(500)
+		// 		.json({
+		// 			message: "An error occurred",
+		// 			error: error.message,
+		// 		});
+		// }
+	}
+);
+
 export const login = asyncHandler( async (
 	req: Request,
 	res: Response,
@@ -69,7 +114,9 @@ export const login = asyncHandler( async (
 	) {
 		return res
 			.status(401)
-			.json({ error: "Invalid credentials" });
+			.json({
+				error: "Invalid email or password",
+			});
 	}
 	const token = jwt.sign(
 		{ email },
@@ -78,7 +125,7 @@ export const login = asyncHandler( async (
 	);
 	return res
 	.status(200)
-	.json({message:"Login Successful", token });
+	.json({message:"Login Successful", token, user });
 });
 
 export const resetPasswordRequest = asyncHandler(
@@ -187,3 +234,109 @@ export const resetPassword = asyncHandler(
 		});
 	}
 );
+
+export const updatePassword = asyncHandler(
+	async (
+		req: AuthRequest,
+		res: Response
+	): Promise<any> => {
+		const { currentPassword, newPassword } =
+			req.body;
+		const email = req.user.email;
+		const user = await User.findOne({ email });
+		// Validate input
+		if (!currentPassword || !newPassword) {
+			return res.status(400).json({
+				error:
+					"Both current and new passwords are required.",
+			});
+		}
+		// Step 2: Check if the user is using social auth
+		if (
+			!user.password &&
+			user.authProvider !== "local"
+		) {
+			return res.status(400).json({
+				message: `Your account is linked to ${user.authProvider}. Please use that provider to log in or reset your password.`,
+			});
+		}
+		if (
+			!(await bcrypt.compare(
+				currentPassword,
+				user.password
+			))
+		) {
+			return res.status(401).json({
+				error: "Current Password Incorrect",
+			});
+		}
+		const hashedPassword = await bcrypt.hash(
+			newPassword,
+			10
+		);
+		// Update the user's password
+		user.password = hashedPassword;
+		await user.save();
+		res.status(200).json({
+			message: "Password updated successfully.",
+		});
+	}
+);
+
+export const updateProfile = asyncHandler(
+	async (req: AuthRequest, res: Response) => {
+const updates = req.body;
+		if(req.file){
+		const { path} = req.file;
+		updates.profilePicture = path;
+		}
+		
+		const email = req.user?.email; // Assuming `req.user` contains authenticated user's info
+		// const {
+		// 	firstName,
+		// 	lastName,
+		// 	phoneNumber,
+		// 	country,
+		// 	state,
+		// } = req.body;
+		
+			// Fetch the user from the database
+			const user = await User.findOne({email});
+			// if (!user) {
+			// 	return res
+			// 		.status(404)
+			// 		.json({ error: "User not found." });
+			// }
+
+			// Update fields if they are provided
+			// if (firstName) user.firstname = firstName;
+			// if (lastName) user.lastname = lastName;
+			// if (phoneNumber)
+			// 	user.phoneNumber = phoneNumber;
+			// if (country) user.country = country;
+			// if (state) user.state = state;
+			 const updatedUser =
+					await User.findByIdAndUpdate(
+						user._id,
+						{ $set: updates },
+						{ new: true, runValidators: true } // Return the updated document and validate fields
+					);
+				// if (!updatedUser) {
+				// 	return res
+				// 		.status(404)
+				// 		.json({ message: "User not found." });
+				// }
+
+			res.status(200).json({
+				message: "Profile updated successfully.",
+				user: updatedUser
+			});
+		
+	}
+);
+export const updateRole = asyncHandler(
+	async (req:Request, res:Response)=>{
+		const {email,role} = req.body
+		const user = await User.findOneAndUpdate({email}, {role})
+	}
+)

@@ -12,7 +12,11 @@ interface UserDocument extends Document {
 	googleId?: string; // To store Google-specific ID
 	facebookId: string;
 	authProvider?: "google" | "local" | "facebook"; // To differentiate between social and traditional login
-	isVerified: Boolean;
+	isVerified: boolean;
+	phoneNumber:  string ;
+	country: string ;
+	state: string ;
+	profilePicture: string ;
 }
 
 const UserSchema: Schema<UserDocument> =
@@ -30,7 +34,7 @@ const UserSchema: Schema<UserDocument> =
 			required: true,
 			unique: true,
 		},
-		password: { type: String },
+		password: { type: String},
 		googleId: {
 			type: String,
 			unique: true, // Unique constraint
@@ -51,9 +55,21 @@ const UserSchema: Schema<UserDocument> =
 		isVerified: {
 			type: Boolean,
 			default: false,
-		}
+		},
+		phoneNumber: { type: String },
+    country: { type: String },
+    state: { type: String },
+    profilePicture: { type: String },
 	});
+UserSchema.methods.toJSON = function () {
+	const user = this;
+	const userObject = user.toObject();
 
+	delete userObject.password;
+	delete userObject.__v;
+
+	return userObject;
+};
 export default mongoose.model<UserDocument>(
 	"User",
 	UserSchema

@@ -1,35 +1,40 @@
 import { Router } from "express";
-import { createEvent, getEvents } from "../controllers/event.controller";
-// import {upload} from "../utils/multer";
+import { createEvent, getEvents, sendInvitation, generateQrCode, rsvpEvent, editEvent, shareEvent, getPublicEvent, getCalendar } from "../controllers/event.controller";
+import {upload} from "../utils/multer";
 // const cloudinary = require("cloudinary").v2;
 // const {
 // 	CloudinaryStorage,
 // } = require("multer-storage-cloudinary");
 import { authMiddleware } from "../utils/authMiddleware";
 const router = Router()
-const multer = require("multer");
 
-// const storage = new CloudinaryStorage({
-// 	cloudinary: cloudinary,
-// 	params: {
-// 		folder: "uploads", // Replace with your desired folder name in Cloudinary
-// 		format: async () => "png", // Optional: specify file format (e.g., png, jpg)
-// 		public_id: (req, file) =>
-// 			file.originalname.split(".")[0], // Use original file name
-// 	},
-// });
-const upload = multer();
 router.post(
-	"/create-event",
+	"/events",
   authMiddleware,
 	upload.single("file"),
 	createEvent
 );
 
 router.get(
-	"/get-events",
+	"/events",
 	authMiddleware,
 	getEvents
 );
 
+router.get("/events/:id", getPublicEvent);
+router.put(
+	"/events/:id",
+	authMiddleware,
+	editEvent
+);
+router.get('/events/:id/share',
+	authMiddleware,
+	shareEvent
+)
+router.get("/calendar", authMiddleware, getCalendar);
+
+router.post("/invitations/send", authMiddleware, sendInvitation);
+router.post("/rsvp", rsvpEvent);
+// Generate QR Code
+router.get('/generate-qr', generateQrCode);
 export default router;

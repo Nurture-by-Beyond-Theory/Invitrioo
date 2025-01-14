@@ -5,11 +5,16 @@ import {
 	resetPasswordRequest,
 	verifyOTP,
 	resetPassword,
-	verifyEmail
+	verifyEmail,
+	updatePassword,
+	updateProfile,
+	updateRole,
+	sendFeedback
 } from "../controllers/user.controller";
 import passport from "../passport";
+import { authMiddleware } from "../utils/authMiddleware";
 const asyncHandler = require("express-async-handler");
-
+import { upload } from "../utils/multer";
 const router = Router();
 
 router.post("/signup", register);
@@ -126,4 +131,18 @@ router.post(
 	"/reset-password",
 	resetPassword
 );
+
+router.put("/update-password",authMiddleware, updatePassword)
+
+router.post("/feedback", sendFeedback)
+
+router.put(
+	"/profile",
+	authMiddleware,
+	upload.single("file"),
+	updateProfile
+);
+router.put("/update-role", updateRole)
+
+
 export default router;

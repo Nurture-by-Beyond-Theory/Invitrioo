@@ -13,15 +13,17 @@ dotenv.config();
 const app = express();
 const PORT = 3000
 
+app.use(cors()); // Enable CORS for all origins
+
 // Configure CORS options
-const corsOptions = {
-  origin: 'http://localhost:5173', // Allow React-Vite app
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Add methods as needed
-  credentials: true, // Allow cookies or authorization headers
-};
+// const corsOptions = {
+//   origin: 'http://127.0.0.1:5500', // Allow React-Vite app
+//   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Add methods as needed
+//   credentials: true, // Allow cookies or authorization headers
+// };
 
 // Apply CORS middleware
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions));
 app.use(express.json())
 // Session middleware configuration
 app.use(
