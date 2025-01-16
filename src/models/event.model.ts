@@ -1,8 +1,9 @@
 import mongoose, {
 	Schema,
 	Document,
+	// HookNextFunction,
 } from "mongoose";
-
+import { HookNextFunction } from "mongoose";
 // Define an interface for the event document
 export interface IEvent extends Document {
 	title: string;
@@ -21,11 +22,9 @@ export interface IEvent extends Document {
 		url: string;
 		altText?: string;
 	};
-	attendees: {
-		name: string;
-		email: string;
-		rsvp: "Yes" | "No" | "Maybe";
-	}[];
+	user: mongoose.Schema.Types.ObjectId;
+	rsvps: mongoose.Types.ObjectId[];
+	status: "pending" | "completed";
 	createdAt: Date;
 	updatedAt: Date;
 }
@@ -86,24 +85,37 @@ const EventSchema: Schema = new Schema<IEvent>({
 			default: "",
 		},
 	},
-	attendees: [
-		{
-			name: {
-				type: String,
-				required: true,
-			},
-			email: {
-				type: String,
-				required: true,
-				match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-			},
-			rsvp: {
-				type: String,
-				enum: ["Yes", "No", "Maybe"],
-				default: "No",
-			},
-		},
+	// attendees: [
+	// 	{
+	// 		name: {
+	// 			type: String,
+	// 			required: true,
+	// 		},
+	// 		email: {
+	// 			type: String,
+	// 			required: true,
+	// 			match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+	// 		},
+	// 		rsvp: {
+	// 			type: String,
+	// 			enum: ["Yes", "No", "Maybe"],
+	// 			default: "No",
+	// 		},
+	// 	},
+	// ],
+	user: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "User",
+		index: true,
+	},
+	rsvps: [
+		{ type: Schema.Types.ObjectId, ref: "RSVP" },
 	],
+	status: {
+		type: String,
+		enum: ["pending", "completed"],
+		default: "pending",
+	},
 	createdAt: {
 		type: Date,
 		default: Date.now,
@@ -119,6 +131,43 @@ EventSchema.pre("save", function (next) {
 	this.updatedAt = new Date();
 	next();
 });
+
+// Pre middleware for find queries
+EventSchema.pre('find', async function (next: HookNextFunction) {
+  const now = new Date();
+  
+  // Dynamically update the status of events that are fetched
+  await this.model.find({ date: { $lt: now }, status: { $ne: 'completed' } }).updateMany(
+    { status: 'completed' }
+  );
+
+  next();
+});
+
+// Pre middleware for findOne queries
+EventSchema.pre('findOne', async function (next: HookNextFunction) {
+  const now = new Date();
+
+  // Dynamically update the status of the single event being fetched
+  const event = await this.model.findOne(this.getQuery());
+  if (event && event.date < now && event.status !== 'completed') {
+    event.status = 'completed';
+    await event.save();
+  }
+
+  next();
+});
+
+// EventSchema.pre("remove", async function (next) {
+// 	const eventId = this._id;
+
+// 	// Delete all RSVPs associated with this event
+// 	await mongoose
+// 		.model("RSVP")
+// 		.deleteMany({ event: eventId });
+
+// 	next();
+// });
 
 // Create and export the model
 const Event = mongoose.model<IEvent>(

@@ -19,7 +19,11 @@ const router = Router();
 
 router.post("/signup", register);
 
-router.post("/verify-email", verifyEmail)
+router.post(
+	"/verify-email",
+	authMiddleware,
+	verifyEmail
+);
 
 router.post("/login", login);
 

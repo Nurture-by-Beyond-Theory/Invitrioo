@@ -35,12 +35,12 @@ const storage = new CloudinaryStorage({
 	cloudinary,
 	params: {
 		folder: "uploads",
-		allowed_formats: ["pdf", "jpg", "png"],
+		allowed_formats: ["jpeg", "jpg", "png"],
 	},
 });
 // File type validation
 function checkFileType(file, cb) {
-	const filetypes = /pdf|jpg|jpeg|png/;
+	const filetypes = /|jpg|jpeg|png/;
 	const extname = filetypes.test(
 		path.extname(file.originalname).toLowerCase()
 	);
@@ -55,7 +55,7 @@ function checkFileType(file, cb) {
 export const upload = multer({
 	storage: storage,
 	fileFilter: function (req, file, cb) {
-		 console.log("File received:", cb);
+		//  console.log("File received:", cb);
 		checkFileType(file, cb);
 	},
 });

@@ -17,6 +17,7 @@ interface UserDocument extends Document {
 	country: string ;
 	state: string ;
 	profilePicture: string ;
+	events: mongoose.Types.ObjectId[];
 }
 
 const UserSchema: Schema<UserDocument> =
@@ -34,7 +35,7 @@ const UserSchema: Schema<UserDocument> =
 			required: true,
 			unique: true,
 		},
-		password: { type: String},
+		password: { type: String },
 		googleId: {
 			type: String,
 			unique: true, // Unique constraint
@@ -57,9 +58,15 @@ const UserSchema: Schema<UserDocument> =
 			default: false,
 		},
 		phoneNumber: { type: String },
-    country: { type: String },
-    state: { type: String },
-    profilePicture: { type: String },
+		country: { type: String },
+		state: { type: String },
+		profilePicture: { type: String },
+		events: [
+			{
+				type: Schema.Types.ObjectId,
+				ref: "Event",
+			},
+		],
 	});
 UserSchema.methods.toJSON = function () {
 	const user = this;
@@ -70,6 +77,18 @@ UserSchema.methods.toJSON = function () {
 
 	return userObject;
 };
+
+// UserSchema.pre("remove", async function (next) {
+// 	const userId = this._id;
+
+// 	// Delete all events created by this user
+// 	await mongoose
+// 		.model("Event")
+// 		.deleteMany({ organizer: userId });
+
+// 	next();
+// });
+
 export default mongoose.model<UserDocument>(
 	"User",
 	UserSchema

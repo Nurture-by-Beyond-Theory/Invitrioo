@@ -1,10 +1,6 @@
 import { Router } from "express";
 import { createEvent, getEvents, sendInvitation, generateQrCode, rsvpEvent, editEvent, shareEvent, getPublicEvent, getCalendar } from "../controllers/event.controller";
 import {upload} from "../utils/multer";
-// const cloudinary = require("cloudinary").v2;
-// const {
-// 	CloudinaryStorage,
-// } = require("multer-storage-cloudinary");
 import { authMiddleware } from "../utils/authMiddleware";
 const router = Router()
 
@@ -28,13 +24,15 @@ router.put(
 	editEvent
 );
 router.get('/events/:id/share',
-	authMiddleware,
+	// authMiddleware,
 	shareEvent
 )
+
 router.get("/calendar", authMiddleware, getCalendar);
 
 router.post("/invitations/send", authMiddleware, sendInvitation);
-router.post("/rsvp", rsvpEvent);
+router.post("/events/:id", rsvpEvent);
+
 // Generate QR Code
-router.get('/generate-qr', generateQrCode);
+router.get('/events/:id/generate-qr', generateQrCode);
 export default router;

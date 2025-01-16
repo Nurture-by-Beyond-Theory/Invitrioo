@@ -5,7 +5,7 @@ export const sendInvitationEmail = async (
 	eventId: string
 ) => {
 	const mailOptions = {
-		from: "your-email@gmail.com",
+		from: "invitrioo@gmail.com",
 		to: email,
 		subject: "Event Invitation",
 		text: `You are invited to the event. View details at: https://jobbertrack.onrender.com/api/${eventId}`,

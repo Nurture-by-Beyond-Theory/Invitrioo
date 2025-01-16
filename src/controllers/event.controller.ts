@@ -5,6 +5,7 @@ import {
 } from "express";
 import Event from "../models/event.model";
 import RSVP from "../models/rsvp.model";
+import User from "../models/user.model";
 
 const asyncHandler = require("express-async-handler");
 import uploadToCloudinary from "../utils/upload";
@@ -17,8 +18,8 @@ dotenv.config();
 
 export const createEvent = asyncHandler(
   async(req: AuthRequest, res : Response)=>{
-		const file = req.file// Helper function to handle Cloudinary upload
- if (!file) {
+
+ if (!req.file) {
 		return res
 			.status(400)
 			.json({
@@ -26,6 +27,7 @@ export const createEvent = asyncHandler(
 			});
  }
 		 const { path, originalname } = req.file;
+		 const email = req.user?.email
 
 				const {
 					title,
@@ -45,6 +47,7 @@ export const createEvent = asyncHandler(
 					});
 					return;
 				}
+		const user = await User.findOne({email})
 
 				// Create the event
 				const newEvent = new Event({
@@ -67,6 +70,11 @@ export const createEvent = asyncHandler(
 				// Save the event to the database
 				const savedEvent = await newEvent.save();
 
+				//Link to user
+
+				user.events.push(savedEvent._id)
+				await user.save()
+
 				res
 					.status(201)
 					.json({
@@ -81,7 +89,7 @@ export const getEvents = asyncHandler(
 		const email= req.user?.email
 		const events = await Event.find({
 			"organizer.email": email,
-		});
+		}).populate("rsvps");
  if (events.length === 0) {
 		throw new Error("No events created")
  } 
@@ -127,7 +135,8 @@ export const getPublicEvent = asyncHandler(
 				date: event.date,
 				location: event.location,
 				time: event.time,
-				picture: event.image, // Assuming the event schema includes a `picture` field
+				picture: event.image,
+				organiser: event.organizer['email']
 			},
 		});
 	}
@@ -171,12 +180,12 @@ export const editEvent = asyncHandler(
 );
 
 export const shareEvent = asyncHandler(
-	async (req: AuthRequest, res: Response) => {
+	async (req: Request, res: Response) => {
 		const { id } = req.params;
-		const userEmail = req.user?.email; // Logged-in user ID (added by authMiddleware)
+		console.log(id)
+		// const userEmail = req.user?.email; // Logged-in user ID (added by authMiddleware)
 		// Find the event by ID
 		const event = await Event.findById(id);
-
 		if (!event) {
 			return res
 				.status(404)
@@ -184,12 +193,12 @@ export const shareEvent = asyncHandler(
 		}
 
 		// Ensure the logged-in user is the owner of the event
-		if (event.organizer.email !== userEmail) {
-			return res.status(403).json({
-				message:
-					"You are not authorized to edit this event",
-			});
-		}
+		// if (event.organizer.email !== userEmail) {
+		// 	return res.status(403).json({
+		// 		message:
+		// 			"You are not authorized to edit this event",
+		// 	});
+		// }
 		// Generate the shareable link
 		const shareableLink = `${process.env.BASE_URL}/events/${event._id}`;
 
@@ -237,11 +246,12 @@ export const sendInvitation = asyncHandler( async (req: Request, res: Response) 
 
 export const generateQrCode = asyncHandler(
 	async (req: Request, res: Response) => {
-		const { eventId, attendeeId } = req.body;
+		// const { eventId, attendeeId } = req.body;
+		const eventId = req.params.id
 		try {
 			const qrCode = await generateQRCodeImage(
 				eventId,
-				attendeeId
+				// attendeeId
 			);
 			res
 				.status(200)
@@ -258,19 +268,46 @@ export const generateQrCode = asyncHandler(
 );
 
 export const rsvpEvent = asyncHandler(async (req: Request, res: Response) => {
-  const { name, email, response } = req.body;
-	const eventId = req.params
+	const { name, email, status } = req.body;
+	const eventId = req.params.id
 
-    // Check if the event exists
-    const event = await Event.findById(eventId);
-    if (!event) {
-      return res.status(404).json({ message: "Event not found" });
-    }
+	// Check if the event exists
+	const event = await Event.findById(eventId);
+	if (!event) {
+		return res
+			.status(404)
+			.json({ message: "Event not found" });
+	}
+	// Check if the user has already RSVP'd to the event
+	const existingRSVP = await RSVP.findOne({
+		event: eventId,
+		email,
+	});
+	if (existingRSVP) {
+		return res
+			.status(400)
+			.json({
+				success: false,
+				message:
+					"You have already RSVP'd to this event",
+			});
+	}
+	// Save the RSVP
+	const rsvp = new RSVP({
+		name,
+		email,
+		status,
+		event: eventId,
+	});
+	await rsvp.save();
 
-    // Save the RSVP
-    const rsvp = new RSVP({ name, email, response, event: eventId });
-    await rsvp.save();
-
-    res.status(201).json({ message: "RSVP recorded successfully", rsvp });
-  
+	// Link the RSVP to the Event
+	event.rsvps.push(rsvp._id);
+	await event.save();
+	res
+		.status(201)
+		.json({
+			message: "RSVP recorded successfully",
+			rsvp,
+		});
 })
