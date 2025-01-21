@@ -118,9 +118,9 @@ export const getCalendar = asyncHandler(
 );
 
 export const getPublicEvent = asyncHandler(
-	async (req: AuthRequest, res: Response) => {
+	async (req: Request, res: Response) => {
 		const { id } = req.params;
-		const event = await Event.findById(id);
+		const event = await Event.findOne({_id:id});
 		 if (!event) {
 				return res
 					.status(404)
@@ -182,7 +182,6 @@ export const editEvent = asyncHandler(
 export const shareEvent = asyncHandler(
 	async (req: Request, res: Response) => {
 		const { id } = req.params;
-		console.log(id)
 		// const userEmail = req.user?.email; // Logged-in user ID (added by authMiddleware)
 		// Find the event by ID
 		const event = await Event.findById(id);

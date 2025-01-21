@@ -146,14 +146,18 @@ EventSchema.pre('find', async function (next: HookNextFunction) {
 
 // Pre middleware for findOne queries
 EventSchema.pre('findOne', async function (next: HookNextFunction) {
-  const now = new Date();
+ const now = new Date();
 
-  // Dynamically update the status of the single event being fetched
-  const event = await this.model.findOne(this.getQuery());
-  if (event && event.date < now && event.status !== 'completed') {
-    event.status = 'completed';
-    await event.save();
-  }
+ // Dynamically update the status of the single event being fetched
+ await this.model.updateOne(
+		{
+			...this.getQuery(),
+			date: { $lt: now },
+			status: { $ne: "completed" },
+		},
+		{ $set: { status: "completed" } }
+ );
+
 
   next();
 });
