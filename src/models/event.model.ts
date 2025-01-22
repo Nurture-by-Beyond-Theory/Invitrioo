@@ -3,7 +3,7 @@ import mongoose, {
 	Document,
 	// HookNextFunction,
 } from "mongoose";
-import { HookNextFunction } from "mongoose";
+// import { HookNextFunction } from "mongoose";
 // Define an interface for the event document
 export interface IEvent extends Document {
 	title: string;
@@ -133,34 +133,46 @@ EventSchema.pre("save", function (next) {
 });
 
 // Pre middleware for find queries
-EventSchema.pre('find', async function (next: HookNextFunction) {
-  const now = new Date();
-  
-  // Dynamically update the status of events that are fetched
-  await this.model.find({ date: { $lt: now }, status: { $ne: 'completed' } }).updateMany(
-    { status: 'completed' }
-  );
+EventSchema.pre(
+	"find",
+	async function (
+		next: mongoose.CallbackWithoutResultAndOptionalError
+	) {
+		const now = new Date();
 
-  next();
-});
+		// Dynamically update the status of events that are fetched
+		await this.model
+			.find({
+				date: { $lt: now },
+				status: { $ne: "completed" },
+			})
+			.updateMany({ status: "completed" });
+
+		next();
+	}
+);
 
 // Pre middleware for findOne queries
-EventSchema.pre('findOne', async function (next: HookNextFunction) {
- const now = new Date();
+EventSchema.pre(
+	"findOne",
+	async function (
+		next: mongoose.CallbackWithoutResultAndOptionalError
+	) {
+		const now = new Date();
 
- // Dynamically update the status of the single event being fetched
- await this.model.updateOne(
-		{
-			...this.getQuery(),
-			date: { $lt: now },
-			status: { $ne: "completed" },
-		},
-		{ $set: { status: "completed" } }
- );
+		// Dynamically update the status of the single event being fetched
+		await this.model.updateOne(
+			{
+				...this.getQuery(),
+				date: { $lt: now },
+				status: { $ne: "completed" },
+			},
+			{ $set: { status: "completed" } }
+		);
 
-
-  next();
-});
+		next();
+	}
+);
 
 // EventSchema.pre("remove", async function (next) {
 // 	const eventId = this._id;

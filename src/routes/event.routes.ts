@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createEvent, getEvents, sendInvitation, generateQrCode, rsvpEvent, editEvent, shareEvent, getPublicEvent, getCalendar } from "../controllers/event.controller";
+import { createEvent, getEvents, sendInvitation, generateQrCode, rsvpEvent, editEvent, shareEvent, getPublicEvent, getEvent, getCalendar } from "../controllers/event.controller";
 import {upload} from "../utils/multer";
 import { authMiddleware } from "../utils/authMiddleware";
 const router = Router()
@@ -16,22 +16,28 @@ router.get(
 	authMiddleware,
 	getEvents
 );
-
-router.get("/events/:id", getPublicEvent);
 router.put(
 	"/events/:id",
 	authMiddleware,
 	editEvent
 );
+router.get(
+	"/events/:id/my-event",
+	authMiddleware,
+	getEvent
+);
+router.get("/events/:id", getPublicEvent);
+
 router.get('/events/:id/share',
 	// authMiddleware,
 	shareEvent
 )
+router.post("/events/:id/rsvp", rsvpEvent);
 
 router.get("/calendar", authMiddleware, getCalendar);
 
 router.post("/invitations/send", authMiddleware, sendInvitation);
-router.post("/events/:id", rsvpEvent);
+
 
 // Generate QR Code
 router.get('/events/:id/generate-qr', generateQrCode);

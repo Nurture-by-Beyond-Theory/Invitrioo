@@ -12,6 +12,7 @@ import uploadToCloudinary from "../utils/upload";
 import { AuthRequest } from "../utils/authMiddleware";
 import { sendInvitationEmail } from "../utils/mailer";
 import { generateQRCodeImage } from "../utils/qrcode";
+import { ObjectId } from "mongodb";
 const dotenv = require("dotenv");
 dotenv.config();
 
@@ -69,10 +70,10 @@ export const createEvent = asyncHandler(
 
 				// Save the event to the database
 				const savedEvent = await newEvent.save();
-
+				const eventId =
+					savedEvent._id as ObjectId;
 				//Link to user
-
-				user.events.push(savedEvent._id)
+				user.events.push(eventId)
 				await user.save()
 
 				res
@@ -96,6 +97,26 @@ export const getEvents = asyncHandler(
 		res.status(200).json({
 			message: "success",
 			event: events,
+		});
+	}
+);
+
+export const getEvent = asyncHandler(
+	async (req: AuthRequest, res: Response) => {
+		const email = req.user?.email;
+		const { id } = req.params;
+		const event = await Event.findOne({
+			_id: id,
+			"organizer.email": email,
+		}).populate("rsvps");;
+		if (!event) {
+			return res
+				.status(404)
+				.json({ message: "Event not found" });
+		}
+		res.status(200).json({
+			message: "success",
+			event
 		});
 	}
 );
@@ -299,9 +320,9 @@ export const rsvpEvent = asyncHandler(async (req: Request, res: Response) => {
 		event: eventId,
 	});
 	await rsvp.save();
-
+const rsvpId = rsvp._id as ObjectId;
 	// Link the RSVP to the Event
-	event.rsvps.push(rsvp._id);
+	event.rsvps.push(rsvpId);
 	await event.save();
 	res
 		.status(201)
