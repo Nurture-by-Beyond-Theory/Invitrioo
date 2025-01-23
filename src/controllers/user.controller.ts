@@ -102,12 +102,17 @@ export const verifyEmail = asyncHandler(
 		}
  user.isVerified = true;
  await user.save();
-
+const token = jwt.sign(
+	{ email },
+	process.env.JWT_SECRET as string,
+	{ expiresIn: "1h" }
+);
  res
 		.status(200)
 		.json({
 			message: "Account verified successfully.",
-			user
+			user,
+			token
 		});
 		
 	}
@@ -159,21 +164,13 @@ export const login = asyncHandler( async (
 	req: Request,
 	res: Response,
 ): Promise<any> => {
+	
 	const { email, password } = req.body;
+	
 	const user = await User.findOne({
 		email,
 	}).populate("events");
-	// Step 2: Check if the user is using social auth
-	if (
-		!user.password &&
-		user.authProvider !== "local"
-	) {
-		return res
-			.status(400)
-			.json({
-				message: `Your account is linked to ${user.authProvider}. Please use that provider to log in or reset your password.`,
-			});
-	}
+
 	if (
 		!user ||
 		!(await bcrypt.compare(
@@ -185,6 +182,18 @@ export const login = asyncHandler( async (
 			error: "Invalid email or password",
 		});
 	}
+	// Step 2: Check if the user is using social auth
+	if (
+		!user.password &&
+		user.authProvider !== "local"
+	) {
+		return res
+			.status(400)
+			.json({
+				message: `Your account is linked to ${user.authProvider}. Please use that provider to log in or reset your password.`,
+			});
+	}
+	
 	// Check if user is verified
 	if (!user.isVerified) {
 		sendEmail(email, "Verify Email");
