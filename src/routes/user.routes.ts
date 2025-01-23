@@ -21,7 +21,7 @@ router.post("/signup", register);
 
 router.post(
 	"/verify-email",
-	authMiddleware,
+	// authMiddleware,
 	verifyEmail
 );
 
