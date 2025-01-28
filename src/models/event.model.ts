@@ -16,8 +16,8 @@ export interface IEvent extends Document {
 	time: string;
 	duration: string;
 	location: string;
-	capacity: number;
-	isVirtual: boolean;
+	// capacity: number;
+	// isVirtual: boolean;
 	image: {
 		url: string;
 		altText?: string;
@@ -67,14 +67,14 @@ const EventSchema: Schema = new Schema<IEvent>({
 		type: String,
 		required: true,
 	},
-	capacity: {
-		type: Number,
-		default: 0,
-	},
-	isVirtual: {
-		type: Boolean,
-		default: false,
-	},
+	// capacity: {
+	// 	type: Number,
+	// 	default: 0,
+	// },
+	// isVirtual: {
+	// 	type: Boolean,
+	// 	default: false,
+	// },
 	image: {
 		url: {
 			type: String,

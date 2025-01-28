@@ -5,12 +5,12 @@ import {
 } from "express";
 import Event from "../models/event.model";
 import RSVP from "../models/rsvp.model";
-import User from "../models/user.model";
+import User from "../models/user.model";	
 
 const asyncHandler = require("express-async-handler");
-import uploadToCloudinary from "../utils/upload";
+// import uploadToCloudinary from "../utils/upload";
 import { AuthRequest } from "../utils/authMiddleware";
-import { sendInvitationEmail } from "../utils/mailer";
+import { invitationEmail, acceptanceEmail } from "../utils/mailer";
 import { generateQRCodeImage } from "../utils/qrcode";
 import { ObjectId } from "mongodb";
 const dotenv = require("dotenv");
@@ -19,69 +19,65 @@ dotenv.config();
 
 export const createEvent = asyncHandler(
   async(req: AuthRequest, res : Response)=>{
-
- if (!req.file) {
-		return res
-			.status(400)
-			.json({
+		if (!req.file) {
+			return res.status(400).json({
 				message: "Image file is required.",
 			});
- }
-		 const { path, originalname } = req.file;
-		 const email = req.user?.email
+		}
+		const { path, originalname } = req.file;
+		const email = req.user?.email;
 
-				const {
-					title,
-					description,
-					date,
-					time,
-					location,
-					capacity,
-					isVirtual,
-					duration,
-					attendees,
-				} = req.body;
-				if (!req.user?.email) {
-					res.status(401).json({
-						message:
-							"Unauthorized: Email not found in token",
-					});
-					return;
-				}
-		const user = await User.findOne({email})
+		const {
+			title,
+			description,
+			date,
+			time,
+			location,
+			capacity,
+			isVirtual,
+			duration,
+			attendees,
+		} = req.body;
+		if (!req.user?.email) {
+			res.status(401).json({
+				message:
+					"Unauthorized: Email not found in token",
+			});
+			return;
+		}
+		const user = await User.findOne({ email });
 
-				// Create the event
-				const newEvent = new Event({
-					title,
-					description,
-					organizer: {
-						// name: organizer.name,
-						email: req.user?.email, // Use authenticated user's email
-					},
-					date,
-					time,
-					location,
-					duration,
-					capacity: capacity || 0,
-					isVirtual: isVirtual || false,
-					image: {url: path, altText: originalname},
-					attendees: attendees || [],
-				});
+		// Create the event
+		const newEvent = new Event({
+			title,
+			description,
+			organizer: {
+				// name: organizer.name,
+				email: req.user?.email, // Use authenticated user's email
+			},
+			date,
+			time,
+			location,
+			duration,
+			capacity: capacity || 0,
+			isVirtual: isVirtual || false,
+			image: { url: path, altText: originalname },
+			attendees: attendees || [],
+		});
 
-				// Save the event to the database
-				const savedEvent = await newEvent.save();
-				const eventId =
-					savedEvent._id as ObjectId;
-				//Link to user
-				user.events.push(eventId)
-				await user.save()
-
-				res
-					.status(201)
-					.json({
-						message: "Event created successfully",
-						event: savedEvent,
-					});
+		// Save the event to the database
+		const savedEvent = await newEvent.save();
+		const eventId = savedEvent._id as ObjectId;
+		//Link to user
+		user.events.push(eventId);
+		await user.save();
+		// Generate the shareable link
+		const link = `${process.env.BASE_URL}/events/${savedEvent._id}`;
+		res.status(201).json({
+			message: "Event created successfully",
+			event: savedEvent,
+			link
+		});
 	}
 )
 
@@ -108,15 +104,18 @@ export const getEvent = asyncHandler(
 		const event = await Event.findOne({
 			_id: id,
 			"organizer.email": email,
-		}).populate("rsvps");;
+		}).populate("rsvps");
 		if (!event) {
 			return res
 				.status(404)
 				.json({ message: "Event not found" });
 		}
+		// Generate the shareable link
+		const link = `${process.env.BASE_URL}/events/${event._id}`;
 		res.status(200).json({
 			message: "success",
-			event
+			event,
+			link
 		});
 	}
 );
@@ -141,14 +140,19 @@ export const getCalendar = asyncHandler(
 export const getPublicEvent = asyncHandler(
 	async (req: Request, res: Response) => {
 		const { id } = req.params;
-		const event = await Event.findOne({_id:id});
-		 if (!event) {
-				return res
-					.status(404)
-					.json({ message: "Event not found" });
-			}
+		const event = await Event.findOne({
+			_id: id,
+		});
+		if (!event) {
+			return res
+				.status(404)
+				.json({ message: "Event not found" });
+		}
+		// Generate the shareable link
+		const link = `${process.env.BASE_URL}/events/${event._id}`;
 		res.status(200).json({
 			message: "success",
+			link,
 			event: {
 				id: event._id,
 				title: event.title,
@@ -157,7 +161,7 @@ export const getPublicEvent = asyncHandler(
 				location: event.location,
 				time: event.time,
 				picture: event.image,
-				organiser: event.organizer['email']
+				organiser: event.organizer["email"],
 			},
 		});
 	}
@@ -240,6 +244,41 @@ export const shareEvent = asyncHandler(
 	}
 );
 
+export const facebookShare = asyncHandler(
+	async (req: Request, res: Response) => {
+		const { id } = req.params;
+		// const userEmail = req.user?.email; // Logged-in user ID (added by authMiddleware)
+		// Find the event by ID
+		const event = await Event.findById(id);
+		if (!event) {
+			return res
+				.status(404)
+				.json({ message: "Event not found" });
+		}
+
+		// Ensure the logged-in user is the owner of the event
+		// if (event.organizer.email !== userEmail) {
+		// 	return res.status(403).json({
+		// 		message:
+		// 			"You are not authorized to edit this event",
+		// 	});
+		// }
+		// Generate the shareable link
+		const shareableLink = `${process.env.BASE_URL}/events/${event._id}`;
+
+		res.status(200).json({
+			message:
+				"Shareable link generated successfully",
+			link: shareableLink,
+			facebookLink: {
+				facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+					shareableLink
+				)}`,
+			},
+		});
+	}
+);
+
 
 // Send Invitation via Email, SMS, or Link
 export const sendInvitation = asyncHandler( async (req: Request, res: Response) => {
@@ -248,7 +287,7 @@ export const sendInvitation = asyncHandler( async (req: Request, res: Response) 
   try {
     for (const attendee of attendees) {
       if (method.includes('email')) {
-        await sendInvitationEmail(attendee.email, eventId);
+        await invitationEmail(attendee.email, eventId);
       }
       // if (method.includes('sms')) {
       //   await sendSMS(attendee.phone, eventId);
@@ -320,7 +359,12 @@ export const rsvpEvent = asyncHandler(async (req: Request, res: Response) => {
 		event: eventId,
 	});
 	await rsvp.save();
-const rsvpId = rsvp._id as ObjectId;
+	const rsvpId = rsvp._id as ObjectId;
+
+	if(status){
+	acceptanceEmail(email, eventId)
+	}
+
 	// Link the RSVP to the Event
 	event.rsvps.push(rsvpId);
 	await event.save();
