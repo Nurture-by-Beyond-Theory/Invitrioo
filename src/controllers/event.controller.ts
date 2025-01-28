@@ -244,40 +244,40 @@ export const shareEvent = asyncHandler(
 	}
 );
 
-export const facebookShare = asyncHandler(
-	async (req: Request, res: Response) => {
-		const { id } = req.params;
-		// const userEmail = req.user?.email; // Logged-in user ID (added by authMiddleware)
-		// Find the event by ID
-		const event = await Event.findById(id);
-		if (!event) {
-			return res
-				.status(404)
-				.json({ message: "Event not found" });
-		}
+// export const facebookShare = asyncHandler(
+// 	async (req: Request, res: Response) => {
+// 		const { id } = req.params;
+// 		// const userEmail = req.user?.email; // Logged-in user ID (added by authMiddleware)
+// 		// Find the event by ID
+// 		const event = await Event.findById(id);
+// 		if (!event) {
+// 			return res
+// 				.status(404)
+// 				.json({ message: "Event not found" });
+// 		}
 
-		// Ensure the logged-in user is the owner of the event
-		// if (event.organizer.email !== userEmail) {
-		// 	return res.status(403).json({
-		// 		message:
-		// 			"You are not authorized to edit this event",
-		// 	});
-		// }
-		// Generate the shareable link
-		const shareableLink = `${process.env.BASE_URL}/events/${event._id}`;
+// 		// Ensure the logged-in user is the owner of the event
+// 		// if (event.organizer.email !== userEmail) {
+// 		// 	return res.status(403).json({
+// 		// 		message:
+// 		// 			"You are not authorized to edit this event",
+// 		// 	});
+// 		// }
+// 		// Generate the shareable link
+// 		const shareableLink = `${process.env.BASE_URL}/events/${event._id}`;
 
-		res.status(200).json({
-			message:
-				"Shareable link generated successfully",
-			link: shareableLink,
-			facebookLink: {
-				facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-					shareableLink
-				)}`,
-			},
-		});
-	}
-);
+// 		res.status(200).json({
+// 			message:
+// 				"Shareable link generated successfully",
+// 			link: shareableLink,
+// 			facebookLink: {
+// 				facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+// 					shareableLink
+// 				)}`,
+// 			},
+// 		});
+// 	}
+// );
 
 
 // Send Invitation via Email, SMS, or Link
