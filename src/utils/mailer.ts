@@ -8,7 +8,7 @@ export const invitationEmail = async (
 		from: "invitrioo@gmail.com",
 		to: email,
 		subject: "Event Invitation",
-		text: `You are invited to the event. View details at: https://jobbertrack.onrender.com/api/${eventId}`,
+		html: `<p>You are invited to the event.</p> <>View details at: <a href = "https://jobbertrack.onrender.com/api/events/${eventId}">Invitrioo</a>`,
 	};
 
 	return transporter.sendMail(mailOptions);
@@ -23,7 +23,7 @@ export const acceptanceEmail = async (
 		from: "invitrioo@gmail.com",
 		to: email,
 		subject: "Event Invitation",
-		text: `You are registered to this event. View details at: https://jobbertrack.onrender.com/api/${eventId}`,
+		html: `<p>You are registered to this event.</p> View details at:</p> <a href = "https://jobbertrack.onrender.com/api/events/${eventId}">Invitrioo</a>`,
 	};
 
 	return transporter.sendMail(mailOptions);

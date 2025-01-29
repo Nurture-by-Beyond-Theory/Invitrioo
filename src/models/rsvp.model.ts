@@ -13,7 +13,7 @@ interface RSVPDocument extends Document {
 const RSVPSchema: Schema = new Schema({
 	name: { type: String, required: true },
 	email: { type: String, required: true, },
-	status: { type: String, Enum:["Yes", "Maybe"] ,required: true, default: "Maybe" },
+	status: { type: String, enum: ["Yes", "Maybe"] ,required: true, default: "Maybe" },
 	event: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "Event",

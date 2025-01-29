@@ -172,7 +172,11 @@ export const editEvent = asyncHandler(
 		const { id } = req.params; // Event ID from the URL
 		const updates = req.body; // Fields to update
 		const userEmail = req.user?.email; // Logged-in user ID (added by authMiddleware)
-
+if(req.file){
+	const { path, originalname } = req.file;
+	const image = {url: path, altText : originalname}
+	updates.image = image
+}
 		// Find the event by ID
 		const event = await Event.findById(id);
 
@@ -282,13 +286,22 @@ export const shareEvent = asyncHandler(
 
 // Send Invitation via Email, SMS, or Link
 export const sendInvitation = asyncHandler( async (req: Request, res: Response) => {
-  const { eventId, attendees, method } = req.body;
-  
-  try {
+  const { attendees} = req.body;
+  const {id}= req.params
+	 if (
+			!Array.isArray(attendees) ||
+			attendees.length === 0
+		) {
+			return res.status(400).json({
+				status: "error",
+				message:
+					"Attendees must be a non-empty array of email addresses.",
+			});
+		}
     for (const attendee of attendees) {
-      if (method.includes('email')) {
-        await invitationEmail(attendee.email, eventId);
-      }
+      // if (method.includes('email')) {
+        await invitationEmail(attendee, id);
+      // }
       // if (method.includes('sms')) {
       //   await sendSMS(attendee.phone, eventId);
       // }
@@ -298,9 +311,6 @@ export const sendInvitation = asyncHandler( async (req: Request, res: Response) 
       // }
     }
     res.status(200).json({ status: 'success', message: 'Invitations sent successfully' });
-  } catch (error) {
-    res.status(500).json({ status: 'error', message: error.message });
-  }
 });
 
 export const generateQrCode = asyncHandler(

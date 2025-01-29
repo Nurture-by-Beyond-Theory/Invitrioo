@@ -1,5 +1,17 @@
 import { Router } from "express";
-import { createEvent, getEvents, sendInvitation, generateQrCode, rsvpEvent, editEvent, shareEvent, getPublicEvent, getEvent, getCalendar } from "../controllers/event.controller";
+import {
+	createEvent,
+	getEvents,
+	sendInvitation,
+	generateQrCode,
+	rsvpEvent,
+	editEvent,
+	shareEvent,
+	getPublicEvent,
+	getEvent,
+	getCalendar,
+	// sendEVentInvite,
+} from "../controllers/event.controller";
 import {upload} from "../utils/multer";
 import { authMiddleware } from "../utils/authMiddleware";
 const router = Router()
@@ -19,6 +31,7 @@ router.get(
 router.put(
 	"/events/:id",
 	authMiddleware,
+	upload.single("file"),
 	editEvent
 );
 router.get(
@@ -29,9 +42,10 @@ router.get(
 router.get("/events/:id", getPublicEvent);
 
 router.get('/events/:id/share',
-	// authMiddleware,
 	shareEvent
 )
+
+router.post("/events/:id/", sendInvitation);
 router.post("/events/:id/rsvp", rsvpEvent);
 
 router.get("/calendar", authMiddleware, getCalendar);
