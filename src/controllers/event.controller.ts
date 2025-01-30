@@ -6,18 +6,20 @@ import {
 import Event from "../models/event.model";
 import RSVP from "../models/rsvp.model";
 import User from "../models/user.model";	
-
+import moment from "moment";
+import { createEvent } from "ics";
 const asyncHandler = require("express-async-handler");
 // import uploadToCloudinary from "../utils/upload";
 import { AuthRequest } from "../utils/authMiddleware";
 import { invitationEmail, acceptanceEmail } from "../utils/mailer";
 import { generateQRCodeImage } from "../utils/qrcode";
+import { eventSchema } from "../validations/eventSchema";
 import { ObjectId } from "mongodb";
 const dotenv = require("dotenv");
 dotenv.config();
 
 
-export const createEvent = asyncHandler(
+export const createEvents = asyncHandler(
   async(req: AuthRequest, res : Response)=>{
 		if (!req.file) {
 			return res.status(400).json({
@@ -26,6 +28,18 @@ export const createEvent = asyncHandler(
 		}
 		const { path, originalname } = req.file;
 		const email = req.user?.email;
+const { error, value } = eventSchema.validate(
+	req.body
+);
+
+if (error) {
+	return res
+		.status(400)
+		.json({
+			status: "error",
+			message: error.details[0].message,
+		});
+}
 
 		const {
 			title,
@@ -248,6 +262,65 @@ export const shareEvent = asyncHandler(
 	}
 );
 
+function parseDuration(duration: string): number {
+	const match = duration.match(/^(\d+)(h|m)$/); // Extract number & unit
+	if (!match) {
+		throw new Error(
+			"Invalid duration format. Use '3h' or '45m'."
+		);
+	}
+
+	const value = parseInt(match[1], 10);
+	const unit = match[2];
+
+	if (unit === "h") return value * 60; // Convert hours to minutes
+	if (unit === "m") return value; // Already in minutes
+
+	return 0;
+}
+
+// Function to generate ICS event
+function generateICSEvent(title: string, description: string, date: Date, time: string, duration: string, location: string) {
+	 const startDate = moment.utc(date).set({
+        hour: parseInt(time.split(":")[0], 10),
+        minute: parseInt(time.split(":")[1], 10),
+    });
+
+    if (!startDate.isValid()) {
+        console.error("Invalid date format.");
+        return null;
+    }
+    // Convert duration (e.g., "3h") to minutes
+    const durationParsed = parseDuration(duration)
+    const endDate = startDate.clone().add(durationParsed, "minutes");
+
+	const { error, value } = createEvent({
+		title,
+		description,
+		location,
+		start: [
+			startDate.year(),
+			startDate.month() + 1,
+			startDate.date(),
+			startDate.hour(),
+			startDate.minute(),
+		],
+		end: [
+			endDate.year(),
+			endDate.month() + 1,
+			endDate.date(),
+			endDate.hour(),
+			endDate.minute(),
+		],
+	});
+
+	if (error) {
+		console.error("ICS Error:", error);
+		return null;
+	}
+	return value;
+}
+
 // export const facebookShare = asyncHandler(
 // 	async (req: Request, res: Response) => {
 // 		const { id } = req.params;
@@ -286,31 +359,62 @@ export const shareEvent = asyncHandler(
 
 // Send Invitation via Email, SMS, or Link
 export const sendInvitation = asyncHandler( async (req: Request, res: Response) => {
-  const { attendees} = req.body;
-  const {id}= req.params
-	 if (
-			!Array.isArray(attendees) ||
-			attendees.length === 0
-		) {
-			return res.status(400).json({
-				status: "error",
-				message:
-					"Attendees must be a non-empty array of email addresses.",
+	const { attendees } = req.body;
+	const { id } = req.params;
+	const event = await Event.findById(id)
+	const {
+		title,
+		description,
+		date,
+		time,
+		duration,
+		location,
+	} = event;
+	if (
+		!Array.isArray(attendees) ||
+		attendees.length === 0
+	) {
+		return res.status(400).json({
+			status: "error",
+			message:
+				"Attendees must be a non-empty array of email addresses.",
+		});
+	}
+	// Generate ICS Event
+	const icsEvent = generateICSEvent(
+		title,
+		description,
+		date,
+		time,
+		duration,
+		location
+	);
+	if (!icsEvent) {
+		return res
+			.status(500)
+			.json({
+				error: "Failed to generate event",
 			});
-		}
-    for (const attendee of attendees) {
-      // if (method.includes('email')) {
-        await invitationEmail(attendee, id);
-      // }
-      // if (method.includes('sms')) {
-      //   await sendSMS(attendee.phone, eventId);
-      // }
-      // if (method.includes('link')) {
-      //   const link = await generateLink(eventId, attendee);
-      //   res.status(200).json({ status: 'success', link });
-      // }
-    }
-    res.status(200).json({ status: 'success', message: 'Invitations sent successfully' });
+	}
+
+	for (const attendee of attendees) {
+		// if (method.includes('email')) {
+		await invitationEmail(attendee, id, icsEvent, title);
+		// }
+		// if (method.includes('sms')) {
+		//   await sendSMS(attendee.phone, eventId);
+		// }
+		// if (method.includes('link')) {
+		//   const link = await generateLink(eventId, attendee);
+		//   res.status(200).json({ status: 'success', link });
+		// }
+	}
+	res
+		.status(200)
+		.json({
+			status: "success",
+			message: "Invitations sent successfully",
+		});
 });
 
 export const generateQrCode = asyncHandler(

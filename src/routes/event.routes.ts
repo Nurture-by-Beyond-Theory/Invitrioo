@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {
-	createEvent,
+	createEvents,
 	getEvents,
 	sendInvitation,
 	generateQrCode,
@@ -20,7 +20,7 @@ router.post(
 	"/events",
   authMiddleware,
 	upload.single("file"),
-	createEvent
+	createEvents
 );
 
 router.get(
