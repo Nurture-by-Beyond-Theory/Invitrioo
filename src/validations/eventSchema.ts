@@ -10,8 +10,8 @@ export const eventSchema = Joi.object({
 		.required()
 		.messages({
 			"string.empty": "Title is required.",
-			"string.min":
-				"Title must be at least 5 characters.",
+			// "string.min":
+			// 	"Title must be at least 5 characters.",
 			"string.max":
 				"Title cannot exceed 100 characters.",
 		}),
@@ -22,8 +22,8 @@ export const eventSchema = Joi.object({
 		.required()
 		.messages({
 			"string.empty": "Description is required.",
-			"string.min":
-				"Description must be at least 10 characters.",
+			// "string.min":
+			// 	"Description must be at least 10 characters.",
 			"string.max":
 				"Description cannot exceed 1000 characters.",
 		}),
@@ -67,12 +67,12 @@ export const eventSchema = Joi.object({
 
 	duration: Joi.string()
 		.required()
-		.pattern(/^\d+[hm]$/)
+		// .pattern(/^\d+[hm]$/)
 		.messages({
 			"string.empty":
 				"Event duration is required.",
-			"string.pattern.base":
-				"Invalid duration format. Use '3h' or '45m'.",
+			// "string.pattern.base":
+			// 	"Invalid duration format. Use '3h' or '45m'.",
 		}),
 
 	location: Joi.string()
@@ -82,7 +82,7 @@ export const eventSchema = Joi.object({
 		.messages({
 			"string.empty":
 				"Event location is required.",
-			"string.min":
-				"Location must be at least 3 characters.",
+			// "string.min":
+			// 	"Location must be at least 3 characters.",
 		}),
 });
