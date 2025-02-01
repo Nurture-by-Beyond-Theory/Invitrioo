@@ -293,7 +293,8 @@ export const verifyOTP = asyncHandler(
 		.json({
 			message:
 				"OTP verified, you can now reset your password",
-				success:true
+				success:true,
+				email
 		});
 	}
 );

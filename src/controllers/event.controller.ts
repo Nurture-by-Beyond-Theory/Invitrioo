@@ -28,18 +28,18 @@ export const createEvents = asyncHandler(
 		}
 		const { path, originalname } = req.file;
 		const email = req.user?.email;
-// const { error, value } = eventSchema.validate(
-// 	req.body
-// );
+const { error, value } = eventSchema.validate(
+	req.body
+);
 
-// if (error) {
-// 	return res
-// 		.status(400)
-// 		.json({
-// 			status: "error",
-// 			message: error.details[0].message,
-// 		});
-// }
+if (error) {
+	return res
+		.status(400)
+		.json({
+			status: "error",
+			message: error.details[0].message,
+		});
+}
 
 		const {
 			title,
